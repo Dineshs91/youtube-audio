@@ -1,46 +1,42 @@
-// https://stackoverflow.com/a/901144/2134124
-function getParameterByName(name, url) {
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
+// Changes XML to JSON
+// https://davidwalsh.name/convert-xml-json
+function xmlToJson(xml) {
+    
+    // Create the return object
+    var obj = {};
 
-function get_video_id() {
-    return getParameterByName('v');
-}
+    if (xml.nodeType == 1) { // element
+        // do attributes
+        if (xml.attributes.length > 0) {
+        obj["@attributes"] = {};
+            for (var j = 0; j < xml.attributes.length; j++) {
+                var attribute = xml.attributes.item(j);
+                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+            }
+        }
+    } else if (xml.nodeType == 3) { // text
+        obj = xml.nodeValue;
+    }
 
-function get_ytplayer_config(webpage) {
-    patterns = [new RegExp(/;ytplayer\.config\s*=\s*({.+?});ytplayer/),
-                new RegExp(/;ytplayer\.config\s*=\s*({.+?});/)];
-
-    for (var i = 0; i < patterns.length; i++) {
-        var pattern = patterns[i];
-        var found = pattern.exec(webpage);
-
-        if (found != null || found != undefined) {
-            console.log("Found ytplayer config");
-            var ytplayer_config = found[1];
-            return JSON.parse(ytplayer_config);
+    // do children
+    if (xml.hasChildNodes()) {
+        for(var i = 0; i < xml.childNodes.length; i++) {
+            var item = xml.childNodes.item(i);
+            var nodeName = item.nodeName;
+            if (typeof(obj[nodeName]) == "undefined") {
+                obj[nodeName] = xmlToJson(item);
+            } else {
+                if (typeof(obj[nodeName].push) == "undefined") {
+                    var old = obj[nodeName];
+                    obj[nodeName] = [];
+                    obj[nodeName].push(old);
+                }
+                obj[nodeName].push(xmlToJson(item));
+            }
         }
     }
-}
-
-function extract_swf_player(webpage) {
-    var pattern = new RegExp('/swfConfig.*?"(https?:\\/\\/.*?watch.*?-.*?\.swf)"/');
-    var mobj = pattern.exec(webpage);
-
-    var player_url = null;
-    if (mobj != null) {
-        var player_url_pattern = '\\(.)';
-        player_url = str.replace(player_url_pattern, '\1', mobj[1]);
-    }
-
-    return player_url;
-}
+    return obj;
+};
 
 function formatParams(params) {
   return "?" + Object
@@ -49,16 +45,6 @@ function formatParams(params) {
           return key+"="+encodeURIComponent(params[key])
         })
         .join("&")
-}
-
-function dexwwwfurlenc(urljson){
-    var dstjson = {};
-    var ret;
-    var reg = /(?:^|&)(\w+)=(\w+)/g;
-    while((ret = reg.exec(urljson)) !== null){
-        dstjson[ret[1]] = ret[2];
-    }
-    return dstjson;
 }
 
 function QueryString(qs)
@@ -106,7 +92,7 @@ QueryString.decode= function(s)
             var n2= parseInt(hex2,16)-0x80;
             return String.fromCharCode((n1<<6)+n2);
         });
-    s= s.replace(/%([0-7][0-9A-F])/gi,
+    s = s.replace(/%([0-7][0-9A-F])/gi,
         function(code,hex)
         {
             return String.fromCharCode(parseInt(hex,16));
@@ -134,6 +120,55 @@ QueryString.prototype.keys= function ()
     return a;
 };
 
+// https://stackoverflow.com/a/901144/2134124
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+         ///////////////////////////////// Custom code /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+var dash_mpds = [];
+var embedded_audio = false;
+
+function extract_swf_player(webpage) {
+    var pattern = new RegExp('/swfConfig.*?"(https?:\\/\\/.*?watch.*?-.*?\.swf)"/');
+    var mobj = pattern.exec(webpage);
+
+    var player_url = null;
+    if (mobj != null) {
+        var player_url_pattern = '\\(.)';
+        player_url = str.replace(player_url_pattern, '\1', mobj[1]);
+    }
+
+    return player_url;
+}
+
+function get_ytplayer_config(webpage) {
+    patterns = [new RegExp(/;ytplayer\.config\s*=\s*({.+?});ytplayer/),
+                new RegExp(/;ytplayer\.config\s*=\s*({.+?});/)];
+
+    for (var i = 0; i < patterns.length; i++) {
+        var pattern = patterns[i];
+        var found = pattern.exec(webpage);
+
+        if (found != null || found != undefined) {
+            var ytplayer_config = found[1];
+            return JSON.parse(ytplayer_config);
+        }
+    }
+}
+
+function get_video_id() {
+    return getParameterByName('v');
+}
 
 function get_video_info(webpage) {
     var ytplayer_config = get_ytplayer_config(webpage);
@@ -168,6 +203,7 @@ function get_video_info(webpage) {
                 query["sts"] = sts;
             }
 
+            // Get the video info.
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "https://www.youtube.com/get_video_info/"+formatParams(query), true);
 
@@ -184,7 +220,6 @@ function get_video_info(webpage) {
             xhr.send();
 
             if (video_info.hasOwnProperty("token")) {
-                console.log(dash_mpds);
                 break;
             }
         }
@@ -204,8 +239,6 @@ function get_audio() {
     }
 }
 
-var dash_mpds = [];
-
 function add_dash_mpd(video_info) {
     var dash_mpd = video_info['dashmpd'];
 
@@ -216,59 +249,14 @@ function add_dash_mpd(video_info) {
     }
 }
 
-function get_webpage() {
-    return document.body.innerHTML;
-}
-
-// Changes XML to JSON
-// https://davidwalsh.name/convert-xml-json
-function xmlToJson(xml) {
-    
-    // Create the return object
-    var obj = {};
-
-    if (xml.nodeType == 1) { // element
-        // do attributes
-        if (xml.attributes.length > 0) {
-        obj["@attributes"] = {};
-            for (var j = 0; j < xml.attributes.length; j++) {
-                var attribute = xml.attributes.item(j);
-                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
-            }
-        }
-    } else if (xml.nodeType == 3) { // text
-        obj = xml.nodeValue;
-    }
-
-    // do children
-    if (xml.hasChildNodes()) {
-        for(var i = 0; i < xml.childNodes.length; i++) {
-            var item = xml.childNodes.item(i);
-            var nodeName = item.nodeName;
-            if (typeof(obj[nodeName]) == "undefined") {
-                obj[nodeName] = xmlToJson(item);
-            } else {
-                if (typeof(obj[nodeName].push) == "undefined") {
-                    var old = obj[nodeName];
-                    obj[nodeName] = [];
-                    obj[nodeName].push(old);
-                }
-                obj[nodeName].push(xmlToJson(item));
-            }
-        }
-    }
-    return obj;
-};
-
 function xml_parse(doc) {
     parser = new DOMParser();
     xmlDoc = parser.parseFromString(doc, "text/xml");
 
     jsonDoc = xmlToJson(xmlDoc);
-    console.log("Get the audio link");
-    if (jsonDoc.hasOwnProperty('MPD')) {
+    if (jsonDoc.hasOwnProperty('MPD') && embedded_audio == false) {
         audio_link = jsonDoc['MPD']['Period']['AdaptationSet'][0]['Representation'][0]['BaseURL']['#text'];
-        console.log("audio_link---======>>>>>>");
+
         var html5_ele = document.body.querySelector('.html5-video-player');
         var player_id_ele = document.body.querySelector('#player-api');
         var player_class_ele = document.body.querySelector('.player-api');
@@ -283,17 +271,29 @@ function xml_parse(doc) {
             player_class_ele.remove();
         }
 
-        console.log("Print this");
+        console.log("Length of dash mpds" + dash_mpds.length);
+
         video_element = document.createElement("video");
+        video_element.name = "media";
+
+        controls_attr = document.createAttribute("controls");
+        autoplay_attr = document.createAttribute("autoplay");
+        video_element.setAttributeNode(controls_attr);
+        video_element.setAttributeNode(autoplay_attr);
+
         source_element = document.createElement("source");
         source_element.src = audio_link;
         source_element.type = "audio/mp4";
 
         video_element.appendChild(source_element);
 
-        console.log("Appending video to the document body");
         document.body.appendChild(video_element);
+        embedded_audio = true;
     }
+}
+
+function get_webpage() {
+    return document.body.innerHTML;
 }
 
 (function() {
