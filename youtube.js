@@ -257,21 +257,7 @@ function xml_parse(doc) {
     if (jsonDoc.hasOwnProperty('MPD') && embedded_audio == false) {
         audio_link = jsonDoc['MPD']['Period']['AdaptationSet'][0]['Representation'][0]['BaseURL']['#text'];
 
-        var html5_ele = document.body.querySelector('.html5-video-player');
-        var player_id_ele = document.body.querySelector('#player-api');
-        var player_class_ele = document.body.querySelector('.player-api');
-        
-        if (html5_ele != null || html5_ele != undefined) {
-            html5_ele.remove();    
-        }
-        if (player_id_ele != null || player_id_ele != undefined) {
-           player_id_ele.remove();   
-        }
-        if (player_class_ele != null || player_class_ele != undefined) {
-            player_class_ele.remove();
-        }
-
-        console.log("Length of dash mpds" + dash_mpds.length);
+        //console.log("Length of dash mpds" + dash_mpds.length);
 
         video_element = document.createElement("video");
         video_element.name = "media";
@@ -280,6 +266,7 @@ function xml_parse(doc) {
         autoplay_attr = document.createAttribute("autoplay");
         video_element.setAttributeNode(controls_attr);
         video_element.setAttributeNode(autoplay_attr);
+        video_element.id = "custom-video";
 
         source_element = document.createElement("source");
         source_element.src = audio_link;
@@ -287,18 +274,61 @@ function xml_parse(doc) {
 
         video_element.appendChild(source_element);
 
-        document.body.appendChild(video_element);
+        document.body.querySelector("#body-container").appendChild(video_element);
         embedded_audio = true;
     }
+}
+
+function remove_video_elements() {
+    var html5_ele = document.body.querySelector('.html5-video-player');
+    var player_id_ele = document.body.querySelector('#player-api');
+    var player_class_ele = document.body.querySelector('.player-api');
+    var video_ele = document.body.querySelector('video');
+    
+    if (html5_ele != null || html5_ele != undefined) {
+        html5_ele.remove();    
+    }
+    if (player_id_ele != null || player_id_ele != undefined) {
+       player_id_ele.remove();   
+    }
+    if (player_class_ele != null || player_class_ele != undefined) {
+        player_class_ele.remove();
+    }
+    if (video_ele != null || video_ele != undefined) {
+        video_ele.remove();
+    }
+    dash_mpds = [];
 }
 
 function get_webpage() {
     return document.body.innerHTML;
 }
 
-(function() {
+function start() {
     var webpage = get_webpage();
+    console.log("start triggered:" + get_video_id());
     get_video_info(webpage);
 
     extract_swf_player(webpage);
+}
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    /* If the received message has the expected format... */
+    if (msg.text && (msg.text == 'start')) {
+        console.log('Received a msg from bp...')
+        embedded_audio = false;
+        remove_video_elements();
+        start();
+    }
+});
+
+(function() {
+    start();
 })();
+
+// (function() {
+//     var webpage = get_webpage();
+//     get_video_info(webpage);
+
+//     extract_swf_player(webpage);
+// })();

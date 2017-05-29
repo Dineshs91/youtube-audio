@@ -15,7 +15,12 @@
         "run_at": "document_end"
     }],
 
+    "background": {
+        "scripts": ["background.js"]
+    },
+
     "permissions": [
+        "webNavigation",
         "activeTab",
         "https://ajax.googleapis.com/",
         "https://*.googlevideo.com/"
