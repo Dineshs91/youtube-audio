@@ -325,10 +325,3 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 (function() {
     start();
 })();
-
-// (function() {
-//     var webpage = get_webpage();
-//     get_video_info(webpage);
-
-//     extract_swf_player(webpage);
-// })();
