@@ -1,5 +1,6 @@
 var dash_mpds = [];
 var embedded_audio = false;
+var video_info_url = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
     var pattern = new RegExp('/swfConfig.*?"(https?:\\/\\/.*?watch.*?-.*?\.swf)"/');
@@ -68,7 +69,7 @@ function get_video_info(webpage) {
 
             // Get the video info.
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", "https://www.youtube.com/get_video_info/"+formatParams(query), true);
+            xhr.open("GET", video_info_url + formatParams(query), true);
 
             xhr.onreadystatechange = function() {
                 qs = new QueryString(xhr.responseText);
@@ -76,7 +77,7 @@ function get_video_info(webpage) {
                 if (dash_mpd != null || dash_mpd != undefined) {
                     video_info = {"dashmpd": dash_mpd};
                     add_dash_mpd(video_info);
-                    get_audio();
+                    get_audio_links();
                 }
             };
 
@@ -89,7 +90,7 @@ function get_video_info(webpage) {
     }
 }
 
-function get_audio() {
+function get_audio_links() {
     for (var i = 0; i < dash_mpds.length; i++) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", dash_mpds[i], true);
@@ -120,26 +121,25 @@ function xml_parse(doc) {
     if (jsonDoc.hasOwnProperty('MPD') && embedded_audio == false) {
         audio_link = jsonDoc['MPD']['Period']['AdaptationSet'][0]['Representation'][0]['BaseURL']['#text'];
 
-        //console.log("Length of dash mpds" + dash_mpds.length);
-
-        video_element = document.createElement("video");
-        video_element.name = "media";
-
-        controls_attr = document.createAttribute("controls");
-        autoplay_attr = document.createAttribute("autoplay");
-        video_element.setAttributeNode(controls_attr);
-        video_element.setAttributeNode(autoplay_attr);
-        video_element.id = "custom-video";
-
-        source_element = document.createElement("source");
-        source_element.src = audio_link;
-        source_element.type = "audio/mp4";
-
-        video_element.appendChild(source_element);
-
-        document.body.querySelector("#body-container").appendChild(video_element);
+        var video_element = create_video_element(audio_link);
+        $("#body-container").append(video_element);
         embedded_audio = true;
     }
+}
+
+/*
+Create and return a video element with the provided audio src.
+
+<video controls autoplay name="media">
+    <source src="https://video-link" type="audio/mp4"></source>
+</video>
+*/
+function create_video_element(audio_src) {
+    var video_element = $("<video controls blah autoplay name='media'></video>");
+    var source_element = $("<source src='" + audio_src + "' type='audio/mp4'></source>")
+
+    video_element.append(source_element[0]);
+    return video_element[0];
 }
 
 function remove_video_elements() {
@@ -178,13 +178,9 @@ function start() {
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
-        console.log('Received a msg from bp...')
+        console.log('Received a msg from background page...')
         embedded_audio = false;
         remove_video_elements();
         start();
     }
 });
-
-(function() {
-    start();
-})();
