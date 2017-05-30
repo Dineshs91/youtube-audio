@@ -11,12 +11,15 @@
 
     "content_scripts": [{
         "matches": ["https://*.youtube.com/*"],
-        "js": ["youtube.js"],
+        "js": [
+            "js/utils.js",
+            "js/youtube.js"
+        ],
         "run_at": "document_end"
     }],
 
     "background": {
-        "scripts": ["background.js"]
+        "scripts": ["js/background.js"]
     },
 
     "permissions": [
