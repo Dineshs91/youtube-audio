@@ -61,8 +61,6 @@ function get_video_info(webpage) {
         if (args['url_encoded_fmt_stream_map'] != null || args['url_encoded_fmt_stream_map'] != undefined) {
             videoInfo = args;
             console.log("Obtained video info from ytplayer config ");
-            console.dir(videoInfo);
-            console.log("Obtained video info from ytplayer config ");
             add_dash_mpd(videoInfo);
             sts = ytplayerConfig['sts'];
             if(videoInfo != null && videoInfo['dashmpd'] != null) {
@@ -94,11 +92,9 @@ function get_video_info(webpage) {
             $.get(videoInfoUrl, query, function(data) {
                 var qs = new QueryString(data);
                 var dashMpd = qs.value("dashmpd");
-                console.log(dashMpd);
 
                 if (dashMpd != null || dashMpd != undefined) {
                     var videoInfo = {"dashmpd": dashMpd};
-                    console.log(videoInfo);
                     deferred.resolve(videoInfo);
                 }
             });
@@ -125,7 +121,6 @@ function get_dash_manifest() {
 
 function add_dash_mpd(videoInfo) {
     var dashMpd = videoInfo['dashmpd'];
-    console.log(videoInfo);
 
     if (dashMpd != null || dashMpd != undefined) {
         var duplicateFound = false;
@@ -138,7 +133,6 @@ function add_dash_mpd(videoInfo) {
         if (duplicateFound == false) {
             dashMpds.push(dashMpd);
         }
-        console.log("add_dash_mpd" + dashMpds + " : " + duplicateFound);
     }
 }
 
@@ -166,8 +160,9 @@ function get_audio_link(jsonDoc) {
 }
 
 function embed_audio_to_webpage(audioLink) {
+    console.log("Embedding custom video element");
     var video_element = create_video_element(audioLink);
-    $("#body-container").append(video_element);
+    $("#watch-header").prepend(video_element);
 }
 
 /*
@@ -178,7 +173,7 @@ Create and return a video element with the provided audio src.
 </video>
 */
 function create_video_element(audioSrc) {
-    var videoElement = $("<video controls autoplay name='media' class='audiox'></video>");
+    var videoElement = $("<video controls autoplay name='media' class='audiox' style='width: 100%'></video>");
     var sourceElement = $("<source src='" + audioSrc + "' type='audio/mp4'></source>")
 
     videoElement.append(sourceElement[0]);
@@ -189,6 +184,7 @@ function create_video_element(audioSrc) {
 Remove the video elements inserted by us previously.
 */
 function remove_custom_video_elements() {
+    console.log("Removing custom video elements");
     $(".audiox").each(function() {
         $(this).remove();
     });
@@ -198,6 +194,7 @@ function remove_custom_video_elements() {
 Remove youtube's video element. 
 */
 function remove_video_elements() {
+    console.log("Removing youtube video elements");
     var html5Element = $('.html5-video-player');
     var playerIdElement = $('#player-api');
     var playerClassElement = $('.player-api');
@@ -238,9 +235,11 @@ function start() {
     var webpage = get_webpage();
     
     get_video_info(webpage).then(function(videoInfo) {
+        console.log("Obtained video info")
         add_dash_mpd(videoInfo);
         return get_dash_manifest();
     }).then(function(dashManifest) {
+        console.log("Retreived dash manifest successfully");
         jsonDoc = xml_parse(dashManifest);
         var audio_link = get_audio_link(jsonDoc);
 
