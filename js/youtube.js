@@ -3,23 +3,22 @@
 var autoplay_enable_url = "https://www.youtube.com/gen_204?a=autoplay&state=enabled"
 
 //
-// dash_mpds contains a collection of manifest urls.
+// dashMpds contains a collection of manifest urls.
 // Accessing the manifest url gives an xml file, with the audio and video links in available formats.
-var dash_mpds = [];
-var embedded_audio = false;
-var video_info_url = "https://www.youtube.com/get_video_info/";
+var dashMpds = [];
+var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
     var pattern = new RegExp('/swfConfig.*?"(https?:\\/\\/.*?watch.*?-.*?\.swf)"/');
     var mobj = pattern.exec(webpage);
 
-    var player_url = null;
+    var playerUrl = null;
     if (mobj != null) {
-        var player_url_pattern = '\\(.)';
-        player_url = str.replace(player_url_pattern, '\1', mobj[1]);
+        var playerUrlPattern = '\\(.)';
+        playerUrl = str.replace(playerUrlPattern, '\1', mobj[1]);
     }
 
-    return player_url;
+    return playerUrl;
 }
 
 /*
@@ -51,21 +50,29 @@ function get_video_id() {
 Extract video info from the webpage.
 */
 function get_video_info(webpage) {
-    var ytplayer_config = get_ytplayer_config(webpage);
-    var video_info = null;
+    var deferred = Q.defer();
+    var ytplayerConfig = get_ytplayer_config(webpage);
+    var videoInfo = null;
     var sts = null;
 
-    if (ytplayer_config != null) {
-        var args = ytplayer_config['args'];
+    if (ytplayerConfig != null) {
+        var args = ytplayerConfig['args'];
 
         if (args['url_encoded_fmt_stream_map'] != null || args['url_encoded_fmt_stream_map'] != undefined) {
-            video_info = args;
-            add_dash_mpd(video_info);
-            sts = ytplayer_config['sts'];
+            videoInfo = args;
+            console.log("Obtained video info from ytplayer config ");
+            console.dir(videoInfo);
+            console.log("Obtained video info from ytplayer config ");
+            add_dash_mpd(videoInfo);
+            sts = ytplayerConfig['sts'];
+            if(videoInfo != null && videoInfo['dashmpd'] != null) {
+                deferred.resolve(videoInfo);    
+            }
         }
     }
-    if (video_info == null || dash_mpds.length == 0) {
+    if (videoInfo == null || dashMpds.length == 0) {
         var el_types = ["info", "embedded", "detailpage", "vevo", ""];
+
         for(var i = 0; i < el_types.length; i++) {
             var query = {
                 'video_id': get_video_id(),
@@ -84,54 +91,54 @@ function get_video_info(webpage) {
             }
 
             // Get the video info.
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", video_info_url + formatParams(query), true);
+            $.get(videoInfoUrl, query, function(data) {
+                var qs = new QueryString(data);
+                var dashMpd = qs.value("dashmpd");
+                console.log(dashMpd);
 
-            xhr.onreadystatechange = function() {
-                // Video info link returns a collection of key value pairs (CSV).
-                // Use QueryString from util.js to parse the response content.
-                qs = new QueryString(xhr.responseText);
-                dash_mpd = qs.value("dashmpd");
-                if (dash_mpd != null || dash_mpd != undefined) {
-                    video_info = {"dashmpd": dash_mpd};
-                    add_dash_mpd(video_info);
-                    get_audio_links();
+                if (dashMpd != null || dashMpd != undefined) {
+                    var videoInfo = {"dashmpd": dashMpd};
+                    console.log(videoInfo);
+                    deferred.resolve(videoInfo);
                 }
-            };
-
-            xhr.send();
-
-            // If video info object has "token" key, exit from the loop.
-            if (video_info.hasOwnProperty("token")) {
-                break;
-            }
+            });
         }
     }
+
+    return deferred.promise;
 }
 
 /*
-Get all the audio links from the array of dash_mpds.
+Get all the audio links from the array of dashMpds.
 */
-function get_audio_links() {
-    for (var i = 0; i < dash_mpds.length; i++) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", dash_mpds[i], true);
-        xhr.onreadystatechange = function() {
-            xml_parse(xhr.responseText);
-        }
+function get_dash_manifest() {
+    var deferred = Q.defer();
 
-        xhr.send();
-        break;
+    for (var i = 0; i < dashMpds.length; i++) {
+        $.get(dashMpds[i], function(data) {
+            deferred.resolve(data);
+        });
     }
+
+    return deferred.promise;
 }
 
-function add_dash_mpd(video_info) {
-    var dash_mpd = video_info['dashmpd'];
+function add_dash_mpd(videoInfo) {
+    var dashMpd = videoInfo['dashmpd'];
+    console.log(videoInfo);
 
-    if (dash_mpd != null || dash_mpd != undefined) {
-        if (dash_mpds[dash_mpd] == null || dash_mpds[dash_mpd] == undefined) {
-            dash_mpds.push(dash_mpd);
+    if (dashMpd != null || dashMpd != undefined) {
+        var duplicateFound = false;
+        for(var i = 0; i < dashMpds.length; i++) {
+            if(dashMpds[i] == dashMpd) {
+                duplicateFound = true;
+                break;
+            }
         }
+        if (duplicateFound == false) {
+            dashMpds.push(dashMpd);
+        }
+        console.log("add_dash_mpd" + dashMpds + " : " + duplicateFound);
     }
 }
 
@@ -143,69 +150,117 @@ function xml_parse(doc) {
     xmlDoc = parser.parseFromString(doc, "text/xml");
 
     jsonDoc = xmlToJson(xmlDoc);
-    if (jsonDoc.hasOwnProperty('MPD') && embedded_audio == false) {
-        audio_link = jsonDoc['MPD']['Period']['AdaptationSet'][0]['Representation'][0]['BaseURL']['#text'];
+    return jsonDoc;
+}
 
-        var video_element = create_video_element(audio_link);
-        $("#body-container").append(video_element);
-        embedded_audio = true;
+/*
+Return a list of all audio formats available.
+
+TODO: Fetch all, currently fetches only the first one.
+*/
+function get_audio_link(jsonDoc) {
+    if (jsonDoc.hasOwnProperty('MPD')) {
+        audioLink = jsonDoc['MPD']['Period']['AdaptationSet'][0]['Representation'][0]['BaseURL']['#text'];
+        return audioLink;
     }
+}
+
+function embed_audio_to_webpage(audioLink) {
+    var video_element = create_video_element(audioLink);
+    $("#body-container").append(video_element);
 }
 
 /*
 Create and return a video element with the provided audio src.
 
-<video controls autoplay name="media">
-    <source src="https://video-link" type="audio/mp4"></source>
+<video controls autoplay name='media' class='audiox'>
+    <source src='https://video-link' type='audio/mp4'></source>
 </video>
 */
-function create_video_element(audio_src) {
-    var video_element = $("<video controls blah autoplay name='media'></video>");
-    var source_element = $("<source src='" + audio_src + "' type='audio/mp4'></source>")
+function create_video_element(audioSrc) {
+    var videoElement = $("<video controls autoplay name='media' class='audiox'></video>");
+    var sourceElement = $("<source src='" + audioSrc + "' type='audio/mp4'></source>")
 
-    video_element.append(source_element[0]);
-    return video_element[0];
+    videoElement.append(sourceElement[0]);
+    return videoElement[0];
 }
 
+/*
+Remove the video elements inserted by us previously.
+*/
+function remove_custom_video_elements() {
+    $(".audiox").each(function() {
+        $(this).remove();
+    });
+}
+
+/*
+Remove youtube's video element. 
+*/
 function remove_video_elements() {
-    var html5_ele = document.body.querySelector('.html5-video-player');
-    var player_id_ele = document.body.querySelector('#player-api');
-    var player_class_ele = document.body.querySelector('.player-api');
-    var video_ele = document.body.querySelector('video');
+    var html5Element = $('.html5-video-player');
+    var playerIdElement = $('#player-api');
+    var playerClassElement = $('.player-api');
+    var videoElement = $('video');
     
-    if (html5_ele != null || html5_ele != undefined) {
-        html5_ele.remove();    
+    if (html5Element != null || html5Element != undefined) {
+        html5Element.remove();    
     }
-    if (player_id_ele != null || player_id_ele != undefined) {
-       player_id_ele.remove();   
+    if (playerIdElement != null || playerIdElement != undefined) {
+       playerIdElement.remove();   
     }
-    if (player_class_ele != null || player_class_ele != undefined) {
-        player_class_ele.remove();
+    if (playerClassElement != null || playerClassElement != undefined) {
+        playerClassElement.remove();
     }
-    if (video_ele != null || video_ele != undefined) {
-        video_ele.remove();
+    if (videoElement != null || videoElement != undefined) {
+        videoElement.remove();
     }
-    dash_mpds = [];
 }
 
 function get_webpage() {
     return document.body.innerHTML;
 }
 
+
 function start() {
+    // Clear dashMpds array.
+    dashMpds = [];
+
+    var videoId = get_video_id();
+
+    if (videoId == null || videoId == undefined || videoId == "") {
+        console.log("video id not found");
+        return;
+    } else {
+        console.log("Found video id: " + videoId);
+    }
+
     var webpage = get_webpage();
-    console.log("start triggered:" + get_video_id());
-    get_video_info(webpage);
+    
+    get_video_info(webpage).then(function(videoInfo) {
+        add_dash_mpd(videoInfo);
+        return get_dash_manifest();
+    }).then(function(dashManifest) {
+        jsonDoc = xml_parse(dashManifest);
+        var audio_link = get_audio_link(jsonDoc);
+
+        remove_video_elements();
+        remove_custom_video_elements();
+        embed_audio_to_webpage(audio_link);
+    }).catch(function(e) {
+        console.log("Error: " + e);
+    });
 
     extract_swf_player(webpage);
 }
 
+/*
+Listen to start message from background page. It gets triggered from chrome.webNavingation event.
+*/
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
         console.log('Received a msg from background page...')
-        embedded_audio = false;
-        remove_video_elements();
         start();
     }
 });
