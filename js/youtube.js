@@ -1,3 +1,10 @@
+// Autoplay
+
+var autoplay_enable_url = "https://www.youtube.com/gen_204?a=autoplay&state=enabled"
+
+//
+// dash_mpds contains a collection of manifest urls.
+// Accessing the manifest url gives an xml file, with the audio and video links in available formats.
 var dash_mpds = [];
 var embedded_audio = false;
 var video_info_url = "https://www.youtube.com/get_video_info/";
@@ -15,6 +22,9 @@ function extract_swf_player(webpage) {
     return player_url;
 }
 
+/*
+Get ytplayer config from the webpage.
+*/
 function get_ytplayer_config(webpage) {
     patterns = [new RegExp(/;ytplayer\.config\s*=\s*({.+?});ytplayer/),
                 new RegExp(/;ytplayer\.config\s*=\s*({.+?});/)];
@@ -30,10 +40,16 @@ function get_ytplayer_config(webpage) {
     }
 }
 
+/*
+Get the video id of the current page.
+*/
 function get_video_id() {
     return getParameterByName('v');
 }
 
+/*
+Extract video info from the webpage.
+*/
 function get_video_info(webpage) {
     var ytplayer_config = get_ytplayer_config(webpage);
     var video_info = null;
@@ -72,6 +88,8 @@ function get_video_info(webpage) {
             xhr.open("GET", video_info_url + formatParams(query), true);
 
             xhr.onreadystatechange = function() {
+                // Video info link returns a collection of key value pairs (CSV).
+                // Use QueryString from util.js to parse the response content.
                 qs = new QueryString(xhr.responseText);
                 dash_mpd = qs.value("dashmpd");
                 if (dash_mpd != null || dash_mpd != undefined) {
@@ -83,6 +101,7 @@ function get_video_info(webpage) {
 
             xhr.send();
 
+            // If video info object has "token" key, exit from the loop.
             if (video_info.hasOwnProperty("token")) {
                 break;
             }
@@ -90,6 +109,9 @@ function get_video_info(webpage) {
     }
 }
 
+/*
+Get all the audio links from the array of dash_mpds.
+*/
 function get_audio_links() {
     for (var i = 0; i < dash_mpds.length; i++) {
         var xhr = new XMLHttpRequest();
@@ -113,6 +135,9 @@ function add_dash_mpd(video_info) {
     }
 }
 
+/*
+parse xml to json and return the object.
+*/
 function xml_parse(doc) {
     parser = new DOMParser();
     xmlDoc = parser.parseFromString(doc, "text/xml");

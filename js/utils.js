@@ -70,6 +70,16 @@ function QueryString(qs)
     }
 }
 
+/*
+Convert the values of query string (name='enigma'&expire=2400)
+
+Example:
+response_text = "name='enigma'&expire=2400";
+qs = new QueryString();
+name = qs.value("name");
+
+console.log("Hello !! " + name);
+*/
 QueryString.decode= function(s)
 {
     s= s.replace(/\+/g,' ');
@@ -119,8 +129,18 @@ QueryString.prototype.keys= function ()
         a.push(key);
     return a;
 };
+/*
+Get the value of query param from the current location.
 
-// https://stackoverflow.com/a/901144/2134124
+Example: https://youtube.com/watch?v=tDul54cSqllarv
+
+v = getParameterByName('v')
+console.log("The value of v is:" + v);
+
+// The value of v is: tDul54cSqllarv
+
+Source: https://stackoverflow.com/a/901144/2134124
+*/
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
     name = name.replace(/[\[\]]/g, "\\$&");
