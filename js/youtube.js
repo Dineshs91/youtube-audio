@@ -168,7 +168,7 @@ function embed_audio_to_webpage(audioLink) {
 /*
 Create and return a video element with the provided audio src.
 
-<video controls autoplay name='media' class='audiox'>
+<video controls autoplay name='media' class='audiox' style='width: 100%'>
     <source src='https://video-link' type='audio/mp4'></source>
 </video>
 */
@@ -218,10 +218,10 @@ function get_webpage() {
     return document.body.innerHTML;
 }
 
-
 function start() {
     // Clear dashMpds array.
     dashMpds = [];
+    remove_custom_video_elements();
 
     var videoId = get_video_id();
 
@@ -244,7 +244,7 @@ function start() {
         var audio_link = get_audio_link(jsonDoc);
 
         remove_video_elements();
-        remove_custom_video_elements();
+        // remove_custom_video_elements();
         embed_audio_to_webpage(audio_link);
     }).catch(function(e) {
         console.log("Error: " + e);
