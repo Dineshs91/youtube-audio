@@ -243,8 +243,10 @@ function start() {
         jsonDoc = xml_parse(dashManifest);
         var audio_link = get_audio_link(jsonDoc);
 
-        remove_video_elements();
-        // remove_custom_video_elements();
+        if (audio_link != null || audio_link != undefined || audio_link != "") {
+            remove_video_elements();
+        }
+
         embed_audio_to_webpage(audio_link);
     }).catch(function(e) {
         console.log("Error: " + e);
@@ -260,6 +262,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
         console.log('Received a msg from background page...')
-        start();
+        $(document).ready(function() {
+            start();
+        });
     }
 });
