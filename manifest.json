@@ -12,6 +12,7 @@
         "js": [
             "js/lib/jquery-3.2.1.min.js",
             "js/lib/q.js",
+            "js/lib/arrive.min.js",
             "js/utils.js",
             "js/youtube.js"
         ],

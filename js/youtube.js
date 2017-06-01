@@ -255,6 +255,9 @@ function start() {
     extract_swf_player(webpage);
 }
 
+// Initial start.
+start();
+
 /*
 Listen to start message from background page. It gets triggered from chrome.webNavingation event.
 */
@@ -262,7 +265,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
         console.log('Received a msg from background page...')
-        $(document).ready(function() {
+
+        $(document).arrive("#eow-title", function() {
+            console.log("Element detected");
             start();
         });
     }
