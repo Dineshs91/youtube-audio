@@ -185,10 +185,29 @@ function get_audio_links(jsonDoc) {
     return audioLinks;
 }
 
-function embed_audio_to_webpage(audioLink) {
+function get_thumbnail(webpage, videoInfo) {
+    var pattern = new RegExp(/<link itemprop="thumbnailUrl".*?href="(.*?)">/);
+    var mobj = pattern.exec(webpage);
+    var thumbnailUrl = "";
+
+    if (mobj != null) {
+        thumbnailUrl = mobj[1];
+    } else if(videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
+        thumbnailUrl = videoInfo['thumbnail_url'];
+    }
+
+    return thumbnailUrl;
+}
+
+function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     console.log("Embedding custom video element");
-    var video_element = create_video_element(audioLink);
-    $(".html5-video-player").prepend(video_element);
+    var videoElement = create_video_element(audioLink);
+    $(".html5-video-player").prepend(videoElement);
+
+    var thumbnail = $("<img src=" + thumbnailUrl + " style='width: 100%; height: 90%;'></img>");
+    $("#player-api").prepend(thumbnail);
+
+    $(".html5-video-player").css("height", "10%")
 }
 
 /*
@@ -257,10 +276,12 @@ function start() {
     }
 
     var webpage = get_webpage();
+    var thumbnailUrl = "";
     
     get_video_info(webpage).then(function(videoInfo) {
         console.log("Obtained video info")
         add_dash_mpd(videoInfo);
+        thumbnailUrl = get_thumbnail(webpage, videoInfo);
         return get_dash_manifest();
     }).then(function(dashManifest) {
         console.log("Retreived dash manifest successfully");
@@ -272,7 +293,7 @@ function start() {
         }
 
         remove_custom_video_elements();
-        embed_audio_to_webpage(audio_link);
+        embed_audio_to_webpage(audio_link, thumbnailUrl);
     }).catch(function(e) {
         console.log("Error: " + e);
     });
