@@ -231,6 +231,8 @@ Remove the video elements inserted by us previously.
 function remove_custom_video_elements() {
     console.log("Removing custom video elements");
     $(".audiox").each(function() {
+        $(this).trigger('pause');
+        $(this).find("source").attr("src", "");
         $(this).remove();
     });
 }
@@ -245,7 +247,15 @@ function remove_video_elements() {
     var htm5VideoPlayerElement = $('.html5-video-player').detach();
     var videoElement = $('video');
 
-    if(playerApiElement != null || playerApiElement != undefined) {
+    var htlm5MainVideo = $('video.html5-main-video');
+
+    // Pause the main video before removing it.
+    if (htlm5MainVideo != null || htlm5MainVideo != undefined) {
+        htlm5MainVideo.trigger('pause');
+        htlm5MainVideo.remove();
+    }
+
+    if (playerApiElement != null || playerApiElement != undefined) {
         playerApiElement.empty().append(htm5VideoPlayerElement);
     }
     
@@ -264,7 +274,6 @@ function get_webpage() {
 function start() {
     // Clear dashMpds array.
     dashMpds = [];
-    remove_custom_video_elements();
 
     var videoId = get_video_id();
 
@@ -311,6 +320,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
         console.log('Received a msg from background page...')
+        remove_custom_video_elements();
 
         $(document).arrive("#eow-title", function() {
             console.log("Element detected");
