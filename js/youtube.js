@@ -199,6 +199,18 @@ function get_thumbnail(webpage, videoInfo) {
     return thumbnailUrl;
 }
 
+function play_next_audio() {
+    var nextAudioLink = $("#watch7-sidebar-modules .watch-sidebar-section").get(0);
+    nextAudioLink = $(nextAudioLink).find(".watch-sidebar-body .content-link").get(0);
+
+    if (nextAudioLink != null || nextAudioLink != undefined) {
+        nextAudioLink.click();
+        console.log("Playing next audio");
+    } else {
+        console.log("Unable to get the next audio.");
+    }
+}
+
 function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     console.log("Embedding custom video element");
     var videoElement = create_video_element(audioLink);
@@ -303,6 +315,10 @@ function start() {
 
         remove_custom_video_elements();
         embed_audio_to_webpage(audio_link, thumbnailUrl);
+
+        $(".audiox").on("ended", function() {
+            play_next_audio();
+        });
     }).catch(function(e) {
         console.log("Error: " + e);
     });
