@@ -256,7 +256,7 @@ function remove_video_elements() {
     console.log("Removing youtube video elements");
     
     var playerApiElement = $('#player-api');
-    var htm5VideoPlayerElement = $('.html5-video-player').detach();
+    var htm5VideoPlayerElement = $('.html5-video-player');
     var videoElement = $('video');
 
     var htlm5MainVideo = $('video.html5-main-video');
