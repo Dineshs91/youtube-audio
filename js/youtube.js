@@ -1,11 +1,7 @@
-// Autoplay
-
-var autoplay_enable_url = "https://www.youtube.com/gen_204?a=autoplay&state=enabled"
-
-//
 // dashMpds contains a collection of manifest urls.
 // Accessing the manifest url gives an xml file, with the audio and video links in available formats.
 var dashMpds = [];
+var autoplayEnabled = false;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
@@ -299,6 +295,17 @@ function remove_video_elements() {
     // TODO: Disable observer when the plugin is disabled.
 }
 
+function autoplay_enabled() {
+    var autoplayCheckbox = $("#autoplay-checkbox");
+    // Get the initial value.
+    autoplayEnabled = $(autoplayCheckbox).is(":checked");
+
+    // Capture any changes made afterwards.
+    $(autoplayCheckbox).change(function() {
+        autoplayEnabled = $(this).is(":checked");
+    });
+}
+
 function get_webpage() {
     return document.body.innerHTML;
 }
@@ -336,8 +343,14 @@ function start() {
         remove_custom_video_elements();
         embed_audio_to_webpage(audio_link, thumbnailUrl);
 
+        autoplay_enabled();
+
         $(".audiox").on("ended", function() {
-            play_next_audio();
+            console.log("Autoplay enabled: " + autoplayEnabled);
+            if(autoplayEnabled) {
+                play_next_audio();
+            }
+
         });
     }).catch(function(e) {
         console.log("Error: " + e);
