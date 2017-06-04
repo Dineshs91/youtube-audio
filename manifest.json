@@ -2,11 +2,8 @@
     "manifest_version": 2,
     "name": "Youtube audio",
     "description": "Listen to audio on youtube",
-    "homepage_url": "https://github.com/dineshs91/",
+    "homepage_url": "https://github.com/dineshs91/youtube-audio",
     "version": "1.0",
-    "browser_action": {
-        "default_popup": "popup.html"
-    },
     "content_scripts": [{
         "matches": ["https://*.youtube.com/*"],
         "js": [
