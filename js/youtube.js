@@ -277,6 +277,26 @@ function remove_video_elements() {
     if (videoElement != null || videoElement != undefined) {
         videoElement.remove();
     }
+
+    // There should be no child elements, other than our custom audio element.
+    // We observe for any child nodes being added and remove them.
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            node = mutation.addedNodes[0];
+            if (node != undefined && node.className != "audiox") {
+                node.remove();
+            }
+        });
+    });
+
+    var observerConfig = {
+        childList: true
+    };
+
+    observer.observe(document.body.querySelector(".html5-video-player"), observerConfig);
+    console.log("Added mutation observer for html5 video element");
+
+    // TODO: Disable observer when the plugin is disabled.
 }
 
 function get_webpage() {
