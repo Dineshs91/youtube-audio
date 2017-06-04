@@ -2,6 +2,8 @@
 // Accessing the manifest url gives an xml file, with the audio and video links in available formats.
 var dashMpds = [];
 var autoplayEnabled = false;
+var enableObserver = false;
+var observer;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
@@ -109,6 +111,8 @@ function get_dash_manifest() {
     for (var i = 0; i < dashMpds.length; i++) {
         $.get(dashMpds[i], function(data) {
             deferred.resolve(data);
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            deferred.reject(errorThrown);
         });
     }
 
@@ -243,6 +247,8 @@ function remove_custom_video_elements() {
         $(this).find("source").attr("src", "");
         $(this).remove();
     });
+
+    $("#player-api").find('img').remove();
 }
 
 /*
@@ -276,21 +282,23 @@ function remove_video_elements() {
 
     // There should be no child elements, other than our custom audio element.
     // We observe for any child nodes being added and remove them.
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            node = mutation.addedNodes[0];
-            if (node != undefined && node.className != "audiox") {
-                node.remove();
-            }
+    if (enableObserver == true) {
+        observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                node = mutation.addedNodes[0];
+                if (node != undefined && node.className != "audiox" && enableObserver == true) {
+                    node.remove();
+                }
+            });
         });
-    });
 
-    var observerConfig = {
-        childList: true
-    };
+        var observerConfig = {
+            childList: true
+        };
 
-    observer.observe(document.body.querySelector(".html5-video-player"), observerConfig);
-    console.log("Added mutation observer for html5 video element");
+        observer.observe(document.body.querySelector(".html5-video-player"), observerConfig);
+        console.log("Added mutation observer for html5 video element");
+    }
 
     // TODO: Disable observer when the plugin is disabled.
 }
@@ -311,8 +319,12 @@ function get_webpage() {
 }
 
 function start() {
-    // Clear dashMpds array.
+    // Clear any previous state.
     dashMpds = [];
+    autoplayEnabled = false;
+    enableObserver = false;
+
+    remove_custom_video_elements();
 
     var videoId = get_video_id();
 
@@ -337,23 +349,25 @@ function start() {
         var audio_link = get_audio_links(jsonDoc)[0]['link'];
 
         if (audio_link != null || audio_link != undefined || audio_link != "") {
+            enableObserver = true;
             remove_video_elements();
+            remove_custom_video_elements();
+            embed_audio_to_webpage(audio_link, thumbnailUrl);
+
+            autoplay_enabled();
+
+            $(".audiox").on("ended", function() {
+                console.log("Autoplay enabled: " + autoplayEnabled);
+                if(autoplayEnabled) {
+                    play_next_audio();
+                }
+
+            });
         }
-
-        remove_custom_video_elements();
-        embed_audio_to_webpage(audio_link, thumbnailUrl);
-
-        autoplay_enabled();
-
-        $(".audiox").on("ended", function() {
-            console.log("Autoplay enabled: " + autoplayEnabled);
-            if(autoplayEnabled) {
-                play_next_audio();
-            }
-
-        });
     }).catch(function(e) {
-        console.log("Error: " + e);
+        enableObserver = false;
+        remove_custom_video_elements();
+        console.log(e);
     });
 
     extract_swf_player(webpage);
@@ -369,6 +383,12 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
         console.log('Received a msg from background page...')
+        if(observer != null || observer != undefined) {
+            observer.disconnect();
+            console.log("Observer disconnected");
+        } else {
+            console.log("No Observer found");
+        }
         remove_custom_video_elements();
 
         $(document).arrive("#eow-title", function() {
