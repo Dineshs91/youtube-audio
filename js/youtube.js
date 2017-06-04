@@ -1,11 +1,7 @@
-// Autoplay
-
-var autoplay_enable_url = "https://www.youtube.com/gen_204?a=autoplay&state=enabled"
-
-//
 // dashMpds contains a collection of manifest urls.
 // Accessing the manifest url gives an xml file, with the audio and video links in available formats.
 var dashMpds = [];
+var autoplayEnabled = false;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
@@ -199,6 +195,18 @@ function get_thumbnail(webpage, videoInfo) {
     return thumbnailUrl;
 }
 
+function play_next_audio() {
+    var nextAudioLink = $("#watch7-sidebar-modules .watch-sidebar-section").get(0);
+    nextAudioLink = $(nextAudioLink).find(".watch-sidebar-body .content-link").get(0);
+
+    if (nextAudioLink != null || nextAudioLink != undefined) {
+        nextAudioLink.click();
+        console.log("Playing next audio");
+    } else {
+        console.log("Unable to get the next audio.");
+    }
+}
+
 function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     console.log("Embedding custom video element");
     var videoElement = create_video_element(audioLink);
@@ -244,7 +252,7 @@ function remove_video_elements() {
     console.log("Removing youtube video elements");
     
     var playerApiElement = $('#player-api');
-    var htm5VideoPlayerElement = $('.html5-video-player').detach();
+    var htm5VideoPlayerElement = $('.html5-video-player');
     var videoElement = $('video');
 
     var htlm5MainVideo = $('video.html5-main-video');
@@ -265,6 +273,37 @@ function remove_video_elements() {
     if (videoElement != null || videoElement != undefined) {
         videoElement.remove();
     }
+
+    // There should be no child elements, other than our custom audio element.
+    // We observe for any child nodes being added and remove them.
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            node = mutation.addedNodes[0];
+            if (node != undefined && node.className != "audiox") {
+                node.remove();
+            }
+        });
+    });
+
+    var observerConfig = {
+        childList: true
+    };
+
+    observer.observe(document.body.querySelector(".html5-video-player"), observerConfig);
+    console.log("Added mutation observer for html5 video element");
+
+    // TODO: Disable observer when the plugin is disabled.
+}
+
+function autoplay_enabled() {
+    var autoplayCheckbox = $("#autoplay-checkbox");
+    // Get the initial value.
+    autoplayEnabled = $(autoplayCheckbox).is(":checked");
+
+    // Capture any changes made afterwards.
+    $(autoplayCheckbox).change(function() {
+        autoplayEnabled = $(this).is(":checked");
+    });
 }
 
 function get_webpage() {
@@ -303,6 +342,16 @@ function start() {
 
         remove_custom_video_elements();
         embed_audio_to_webpage(audio_link, thumbnailUrl);
+
+        autoplay_enabled();
+
+        $(".audiox").on("ended", function() {
+            console.log("Autoplay enabled: " + autoplayEnabled);
+            if(autoplayEnabled) {
+                play_next_audio();
+            }
+
+        });
     }).catch(function(e) {
         console.log("Error: " + e);
     });
