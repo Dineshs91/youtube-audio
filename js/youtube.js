@@ -4,6 +4,7 @@ var dashMpds = [];
 var autoplayEnabled = false;
 var enableObserver = false;
 var observer;
+var ytVideoPlayer;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
@@ -214,6 +215,7 @@ function play_next_audio() {
 function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     console.log("Embedding custom video element");
     var videoElement = create_video_element(audioLink);
+    $("#player-api").append("<div class='html5-video-player audiox'></div>");
     $(".html5-video-player").prepend(videoElement);
 
     var thumbnail = $("<img src=" + thumbnailUrl + " style='width: 100%; height: 90%;'></img>");
@@ -244,11 +246,14 @@ function remove_custom_video_elements() {
     console.log("Removing custom video elements");
     $(".audiox").each(function() {
         $(this).trigger('pause');
-        $(this).find("source").attr("src", "");
+        // $(this).find("source").attr("src", "");
         $(this).remove();
     });
 
     $("#player-api").find('img').remove();
+
+    // Restore yt video element.
+    // $("#player-api").append(ytVideoPlayer);
 }
 
 /*
@@ -256,49 +261,61 @@ Remove youtube's video element.
 */
 function remove_video_elements() {
     console.log("Removing youtube video elements");
+
+    // Copy the element before removing
+    var videoPlayer = $("#movie_player");
+
+    // pause the video before removing it.
+    videoPlayer.find("video").trigger("pause");
+
+    ytVideoPlayer = videoPlayer.clone();
+
+    // remove the element.
+    videoPlayer.remove();
+
+    // var playerApiElement = $('#player-api');
+    // var htm5VideoPlayerElement = $('.html5-video-player');
+    // var videoElement = $('video');
+
+    // var htlm5MainVideo = $('video.html5-main-video');
+
+    // // Pause the main video before removing it.
+    // if (htlm5MainVideo != null || htlm5MainVideo != undefined) {
+    //     htlm5MainVideo.trigger('pause');
+    //     htlm5MainVideo.remove();
+    // }
+
+    // if (playerApiElement != null || playerApiElement != undefined) {
+    //     playerApiElement.empty().append(htm5VideoPlayerElement);
+    // }
     
-    var playerApiElement = $('#player-api');
-    var htm5VideoPlayerElement = $('.html5-video-player');
-    var videoElement = $('video');
-
-    var htlm5MainVideo = $('video.html5-main-video');
-
-    // Pause the main video before removing it.
-    if (htlm5MainVideo != null || htlm5MainVideo != undefined) {
-        htlm5MainVideo.trigger('pause');
-        htlm5MainVideo.remove();
-    }
-
-    if (playerApiElement != null || playerApiElement != undefined) {
-        playerApiElement.empty().append(htm5VideoPlayerElement);
-    }
-    
-    if (htm5VideoPlayerElement != null || htm5VideoPlayerElement != undefined) {
-        htm5VideoPlayerElement.empty();
-    }
-    if (videoElement != null || videoElement != undefined) {
-        videoElement.remove();
-    }
+    // if (htm5VideoPlayerElement != null || htm5VideoPlayerElement != undefined) {
+    //     htm5VideoPlayerElement.empty();
+    // }
+    // if (videoElement != null || videoElement != undefined) {
+    //     videoElement.remove();
+    // }
 
     // There should be no child elements, other than our custom audio element.
     // We observe for any child nodes being added and remove them.
-    if (enableObserver == true) {
-        observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                node = mutation.addedNodes[0];
-                if (node != undefined && node.className != "audiox" && enableObserver == true) {
-                    node.remove();
-                }
-            });
-        });
+    // if (enableObserver == true) {
+    //     observer = new MutationObserver(function(mutations) {
+    //         mutations.forEach(function(mutation) {
+    //             node = mutation.addedNodes[0];
+    //             if (node != undefined && (node.className != "audiox" || node.className.indexOf("html5-video-player") == -1) && enableObserver == true) {
+    //                 node.remove();
+    //                 console.log("Removing => " + node.className);
+    //             }
+    //         });
+    //     });
 
-        var observerConfig = {
-            childList: true
-        };
+    //     var observerConfig = {
+    //         childList: true
+    //     };
 
-        observer.observe(document.body.querySelector(".html5-video-player"), observerConfig);
-        console.log("Added mutation observer for html5 video element");
-    }
+    //     observer.observe(document.body.querySelector("#player-api"), observerConfig);
+    //     console.log("Added mutation observer for html5 video element");
+    // }
 
     // TODO: Disable observer when the plugin is disabled.
 }
