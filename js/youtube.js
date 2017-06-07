@@ -269,13 +269,6 @@ function remove_video_elements() {
 
     // remove the element.
     videoPlayer.remove();
-
-    $('#player-api').arrive("div", function() {
-        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
-            console.log("Found element");
-            $(this).remove();
-        }
-    });
 }
 
 function autoplay_enabled() {
@@ -286,6 +279,36 @@ function autoplay_enabled() {
     // Capture any changes made afterwards.
     $(autoplayCheckbox).change(function() {
         autoplayEnabled = $(this).is(":checked");
+    });
+}
+
+function add_event_listeners() {
+    // If our custom video element is removed by yt, we try to embed again.
+    $('#player-api').leave("div", function() {
+        if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
+            // console.log($(this)[0].className);
+            if (! $(".html5-video-player.audiox").length) {
+                console.log("Trying to embed again");
+                start();
+            }
+        }
+    });
+
+    // Autoplay
+    $(".audiox").on("ended", function() {
+        console.log("Autoplay enabled: " + autoplayEnabled);
+        if(autoplayEnabled) {
+            play_next_audio();
+        }
+
+    });
+
+    // Remove all the child nodes of player-api element except for our video element.
+    // This is needed to remove any dynamic elements added by yt.
+    $('#player-api').arrive("div", function() {
+        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+            $(this).remove();
+        }
     });
 }
 
@@ -327,36 +350,19 @@ function start() {
         if (audio_link != null || audio_link != undefined || audio_link != "") {
             enableObserver = true;
             remove_video_elements();
-            remove_custom_video_elements();
             embed_audio_to_webpage(audio_link, thumbnailUrl);
 
-            $('#player-api').leave("div", function() {
-                if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
-                    console.log($(this)[0].className);
-                    if (! $(".html5-video-player.audiox").length) {
-                        console.log("Trying to embed again");
-                        embed_audio_to_webpage(audio_link, thumbnailUrl);
-                    }
-                }
-            });
-
             autoplay_enabled();
-
-            $(".audiox").on("ended", function() {
-                console.log("Autoplay enabled: " + autoplayEnabled);
-                if(autoplayEnabled) {
-                    play_next_audio();
-                }
-
-            });
         }
     }).catch(function(e) {
         enableObserver = false;
-        remove_custom_video_elements();
         console.log(e);
+    }).fin(function() {
+        console.log("Adding event listeners");
+        add_event_listeners();
     });
 
-    console.log(extract_swf_player(webpage));
+    // console.log(extract_swf_player(webpage));
 }
 
 /*
