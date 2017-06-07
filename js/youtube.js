@@ -251,9 +251,6 @@ function remove_custom_video_elements() {
     });
 
     $("#player-api").find('img').remove();
-
-    // Restore yt video element.
-    // $("#player-api").append(ytVideoPlayer);
 }
 
 /*
@@ -273,51 +270,12 @@ function remove_video_elements() {
     // remove the element.
     videoPlayer.remove();
 
-    // var playerApiElement = $('#player-api');
-    // var htm5VideoPlayerElement = $('.html5-video-player');
-    // var videoElement = $('video');
-
-    // var htlm5MainVideo = $('video.html5-main-video');
-
-    // // Pause the main video before removing it.
-    // if (htlm5MainVideo != null || htlm5MainVideo != undefined) {
-    //     htlm5MainVideo.trigger('pause');
-    //     htlm5MainVideo.remove();
-    // }
-
-    // if (playerApiElement != null || playerApiElement != undefined) {
-    //     playerApiElement.empty().append(htm5VideoPlayerElement);
-    // }
-    
-    // if (htm5VideoPlayerElement != null || htm5VideoPlayerElement != undefined) {
-    //     htm5VideoPlayerElement.empty();
-    // }
-    // if (videoElement != null || videoElement != undefined) {
-    //     videoElement.remove();
-    // }
-
-    // There should be no child elements, other than our custom audio element.
-    // We observe for any child nodes being added and remove them.
-    // if (enableObserver == true) {
-    //     observer = new MutationObserver(function(mutations) {
-    //         mutations.forEach(function(mutation) {
-    //             node = mutation.addedNodes[0];
-    //             if (node != undefined && (node.className != "audiox" || node.className.indexOf("html5-video-player") == -1) && enableObserver == true) {
-    //                 node.remove();
-    //                 console.log("Removing => " + node.className);
-    //             }
-    //         });
-    //     });
-
-    //     var observerConfig = {
-    //         childList: true
-    //     };
-
-    //     observer.observe(document.body.querySelector("#player-api"), observerConfig);
-    //     console.log("Added mutation observer for html5 video element");
-    // }
-
-    // TODO: Disable observer when the plugin is disabled.
+    $('#player-api').arrive("div", function() {
+        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+            console.log("Found element");
+            $(this).remove();
+        }
+    });
 }
 
 function autoplay_enabled() {
@@ -354,22 +312,33 @@ function start() {
 
     var webpage = get_webpage();
     var thumbnailUrl = "";
+    var audio_link;
     
     get_video_info(webpage).then(function(videoInfo) {
-        console.log("Obtained video info")
+        console.log("Obtained video info");
         add_dash_mpd(videoInfo);
         thumbnailUrl = get_thumbnail(webpage, videoInfo);
         return get_dash_manifest();
     }).then(function(dashManifest) {
         console.log("Retreived dash manifest successfully");
         jsonDoc = xml_parse(dashManifest);
-        var audio_link = get_audio_links(jsonDoc)[0]['link'];
+        audio_link = get_audio_links(jsonDoc)[0]['link'];
 
         if (audio_link != null || audio_link != undefined || audio_link != "") {
             enableObserver = true;
             remove_video_elements();
             remove_custom_video_elements();
             embed_audio_to_webpage(audio_link, thumbnailUrl);
+
+            $('#player-api').leave("div", function() {
+                if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
+                    console.log($(this)[0].className);
+                    if (! $(".html5-video-player.audiox").length) {
+                        console.log("Trying to embed again");
+                        embed_audio_to_webpage(audio_link, thumbnailUrl);
+                    }
+                }
+            });
 
             autoplay_enabled();
 
@@ -387,11 +356,8 @@ function start() {
         console.log(e);
     });
 
-    extract_swf_player(webpage);
+    console.log(extract_swf_player(webpage));
 }
-
-// Initial start.
-start();
 
 /*
 Listen to start message from background page. It gets triggered from chrome.webNavingation event.
@@ -399,18 +365,23 @@ Listen to start message from background page. It gets triggered from chrome.webN
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     /* If the received message has the expected format... */
     if (msg.text && (msg.text == 'start')) {
-        console.log('Received a msg from background page...')
-        if(observer != null || observer != undefined) {
-            observer.disconnect();
-            console.log("Observer disconnected");
-        } else {
-            console.log("No Observer found");
-        }
-        remove_custom_video_elements();
+        console.log('Received a msg from background page...');
 
-        $(document).arrive("#eow-title", function() {
-            console.log("Element detected");
-            start();
-        });
+        // check if element is present.
+        if ($("#eow-title").length) {
+            var v = getParameterByName("v", msg.url);
+
+            if(get_video_id() == v) {
+                start();
+            }
+        } else {
+            $(document).arrive("#eow-title", function() {
+                var v = getParameterByName("v", msg.url);
+                if(get_video_id() == v) {
+                    start();
+                }
+                $(document).unbindArrive("#eow-title");
+            });
+        }
     }
 });
