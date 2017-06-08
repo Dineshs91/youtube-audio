@@ -280,6 +280,10 @@ function autoplay_enabled() {
 }
 
 function add_event_listeners() {
+    // First unbind all the existing listeners
+    $("#player-api").unbindArrive();
+    $("#player-api").unbindLeave();
+
     // If our custom video element is removed by yt, we try to embed again.
     $('#player-api').leave("div", function() {
         if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
@@ -298,6 +302,14 @@ function add_event_listeners() {
             play_next_audio();
         }
 
+    });
+
+    // pause the video and remove it first. (except for our video element.)
+    $('#player-api').arrive("video", function() {
+        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+            $(this).pause();
+            $(this).remove();
+        }
     });
 
     // Remove all the child nodes of player-api element except for our video element.
