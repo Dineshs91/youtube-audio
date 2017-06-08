@@ -4,7 +4,6 @@ var dashMpds = [];
 var autoplayEnabled = false;
 var enableObserver = false;
 var observer;
-var ytVideoPlayer;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
 function extract_swf_player(webpage) {
@@ -265,8 +264,6 @@ function remove_video_elements() {
     // pause the video before removing it.
     videoPlayer.find("video").trigger("pause");
 
-    ytVideoPlayer = videoPlayer.clone();
-
     // remove the element.
     videoPlayer.remove();
 }
@@ -384,9 +381,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
             $(document).arrive("#eow-title", function() {
                 var v = getParameterByName("v", msg.url);
                 if(get_video_id() == v) {
+                    $(document).unbindArrive("#eow-title");
                     start();
                 }
-                $(document).unbindArrive("#eow-title");
             });
         }
     }
