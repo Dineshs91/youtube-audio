@@ -20,7 +20,6 @@ chrome.runtime.onMessage.addListener(
                 chrome.tabs.executeScript(null, {
                     code: decryptSrcCode + sigFunction + "('" + encryptedCode + "')"
                 }, function(result) {
-                    console.log(result);
                     chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
                         chrome.tabs.sendMessage(tabs[0].id, {
                             manifestUrl: manifestUrl,
@@ -34,7 +33,6 @@ chrome.runtime.onMessage.addListener(
 )
 
 function find_decrypt_src_code(srcCode, sigFunction) {
-    console.log("sigFunction is:" + sigFunction);
     var regexStr = "(?:function\\s+" + sigFunction + "|[{;,]\\s*" + sigFunction + "\\s*=\\s*function|var\\s+" + sigFunction + "\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\};";
 
     var pattern = new RegExp(regexStr);
@@ -50,7 +48,6 @@ function find_decrypt_src_code(srcCode, sigFunction) {
         mobj = pattern.exec(funcCode);
         var depFuncName = mobj[1];
 
-        //console.log(depFuncName);
         var depFunc = get_dependent_function(srcCode, depFuncName);
         // Append the function to decryptSrcCode.
         decryptSrcCode += depFunc;
