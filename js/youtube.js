@@ -242,7 +242,7 @@ function get_thumbnail(webpage, videoInfo) {
 
     if (mobj != null) {
         thumbnailUrl = mobj[1];
-    } else if(videoInfo != null || videoInfo != undefined || videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
+    } else if(!(videoInfo == null || videoInfo == undefined) && !(videoInfo['thumbnail_url'] == null || videoInfo['thumbnail_url'] == undefined)) {
         thumbnailUrl = videoInfo['thumbnail_url'];
     }
 
