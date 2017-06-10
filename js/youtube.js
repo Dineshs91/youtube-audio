@@ -147,6 +147,7 @@ playerUrl: https://www.youtube.com/yts/jsbin/player-vflZ_L_3c/en_US/base.js
 function decrypt_manifest_signature(manifestUrl) {
     var playerUrl = "https://www.youtube.com" + $("#movie_player").attr("data-version");
     var encryptedCode = get_encrypted_code_from_manifest(manifestUrl);
+    console.log("Get decrypted manifest signature");
 
     // Handle in background script.
     chrome.runtime.sendMessage({
@@ -229,7 +230,7 @@ function get_thumbnail(webpage, videoInfo) {
 
     if (mobj != null) {
         thumbnailUrl = mobj[1];
-    } else if(videoInfo != null || videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
+    } else if(videoInfo != null || videoInfo != undefined || videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
         thumbnailUrl = videoInfo['thumbnail_url'];
     }
 
@@ -493,9 +494,10 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
             });
         }
     } else if(msg.decryptedCode) {
+        console.log("Received decrypted code");
         var decryptedCode = msg.decryptedCode[0];
         var manifestUrl = msg.manifestUrl;
-        //console.log(decryptedCode);
+
         handle_decrypted_manifest(manifestUrl, decryptedCode);
     }
 });
