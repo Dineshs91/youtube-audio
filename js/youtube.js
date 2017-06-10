@@ -95,6 +95,8 @@ function get_video_info(webpage) {
                     var videoInfo = {"dashmpd": dashMpd};
                     deferred.resolve(videoInfo);
                 }
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                deferred.reject(errorThrown);
             });
         }
     }
@@ -113,16 +115,20 @@ function get_dash_manifest() {
         $.get(manifestUrl, function(data) {
             deferred.resolve(data);
         }).fail(function(jqXHR, textStatus, errorThrown) {
+            // Try to download the decrypted manifest.
             decrypt_manifest_signature(manifestUrl);
-            if (i == dashMpds.length - 1) {
-                deferred.reject(errorThrown);
-            }
+            deferred.reject(errorThrown);
         });
     }
 
     return deferred.promise;
 }
 
+/*
+manifest.googlevideo.com/api/manifest/dash/source/youtube/s/9EF04C53DC3BA02F8622B1A2C7205EAF1DA5EB.E1F1766EF29E9AD8AA9D496D9FDF4EC298D620E/pl/24/.../requiressl/yes
+
+/s/{encryptedCode}/
+*/
 function get_encrypted_code_from_manifest(manifestUrl) {
     var pattern = new RegExp(/\/s\/([a-fA-F0-9\.]+)/);
     var mobj = pattern.exec(manifestUrl);
@@ -144,6 +150,7 @@ function decrypt_manifest_signature(manifestUrl) {
 
     // Handle in background script.
     chrome.runtime.sendMessage({
+        manifestUrl: manifestUrl,
         playerUrl: playerUrl,
         encryptedCode: encryptedCode
     }, function() {});
@@ -222,7 +229,7 @@ function get_thumbnail(webpage, videoInfo) {
 
     if (mobj != null) {
         thumbnailUrl = mobj[1];
-    } else if(videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
+    } else if(videoInfo != null || videoInfo['thumbnail_url'] != null || videoInfo['thumbnail_url'] != undefined) {
         thumbnailUrl = videoInfo['thumbnail_url'];
     }
 
@@ -374,7 +381,7 @@ function start() {
 
     var webpage = get_webpage();
     var thumbnailUrl = "";
-    var audio_link;
+    var audioLink;
 
     get_video_info(webpage).then(function(videoInfo) {
         console.log("Obtained video info");
@@ -384,12 +391,12 @@ function start() {
     }).then(function(dashManifest) {
         console.log("Retreived dash manifest successfully");
         jsonDoc = xml_parse(dashManifest);
-        audio_link = get_audio_links(jsonDoc)[0]['link'];
+        audioLink = get_audio_links(jsonDoc)[0]['link'];
 
-        if (audio_link != null || audio_link != undefined || audio_link != "") {
+        if (audioLink != null || audioLink != undefined || audioLink != "") {
             enableObserver = true;
             remove_video_elements();
-            embed_audio_to_webpage(audio_link, thumbnailUrl);
+            embed_audio_to_webpage(audioLink, thumbnailUrl);
 
             autoplay_enabled();
         }
@@ -400,8 +407,65 @@ function start() {
         console.log("Adding event listeners");
         add_event_listeners();
     });
+}
 
-    // console.log(extract_swf_player(webpage));
+/*
+Replace /s/ADFEB.EBEB/ => /signature/EDADD.CDC/
+*/
+function form_decrypted_manifest_url(manifestUrl, decryptedCode) {
+    var decryptedManifestUrl = null;
+    var pattern = new RegExp(/\/s\/([a-fA-F0-9\.]+)\//);
+    var value = "/signature/" + decryptedCode + "/"
+    
+    var decryptedManifestUrl = manifestUrl.replace(pattern, value);
+    return decryptedManifestUrl;
+}
+
+/*
+This manifest url should contain decrypted signatures.
+*/
+function fetch_decrypted_manifest(decryptedManifestUrl) {
+    var deferred = Q.defer();
+
+    $.get(decryptedManifestUrl, function(data) {
+        deferred.resolve(data);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        deferred.reject(errorThrown)
+    });
+
+    return deferred.promise;
+}
+
+/*
+Handle decrypted manifest flow.
+*/
+function handle_decrypted_manifest(manifestUrl, decryptedCode) {
+    console.log("handle decrypted manifest");
+    var webpage = get_webpage();
+    var audioLink = null;
+
+
+    var thumbnailUrl = get_thumbnail(webpage);
+    var decryptedManifestUrl = form_decrypted_manifest_url(manifestUrl, decryptedCode);
+    fetch_decrypted_manifest(decryptedManifestUrl).then(function(dashManifest) {
+        console.log("Retreived dash manifest successfully by decrypting");
+        jsonDoc = xml_parse(dashManifest);
+        audioLink = get_audio_links(jsonDoc)[0]['link'];
+
+        if (audioLink != null || audioLink != undefined || audioLink != "") {
+            enableObserver = true;
+            remove_video_elements();
+            embed_audio_to_webpage(audioLink, thumbnailUrl);
+
+            autoplay_enabled();
+        }
+    }).catch(function(e) {
+        enableObserver = false;
+        console.log(e);
+    }).fin(function() {
+        console.log("Adding event listeners");
+        add_event_listeners();
+    });
 }
 
 /*
@@ -429,7 +493,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
             });
         }
     } else if(msg.decryptedCode) {
-        var decryptedCode = msg.decryptedCode;
-        console.log(decryptedCode);
+        var decryptedCode = msg.decryptedCode[0];
+        var manifestUrl = msg.manifestUrl;
+        //console.log(decryptedCode);
+        handle_decrypted_manifest(manifestUrl, decryptedCode);
     }
 });

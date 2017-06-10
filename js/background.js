@@ -9,6 +9,7 @@ chrome.runtime.onMessage.addListener(
     function(msg, sender, sendResponse) {
         // This will take the function, and the code to be decrypted.
         if (msg.playerUrl) {
+            var manifestUrl = msg.manifestUrl;
             var playerUrl = msg.playerUrl;
             var encryptedCode = msg.encryptedCode;
 
@@ -22,6 +23,7 @@ chrome.runtime.onMessage.addListener(
                     console.log(result);
                     chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
                         chrome.tabs.sendMessage(tabs[0].id, {
+                            manifestUrl: manifestUrl,
                             decryptedCode: result
                         }, function() {});
                     });
