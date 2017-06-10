@@ -142,10 +142,22 @@ function get_encrypted_code_from_manifest(manifestUrl) {
 }
 
 /*
+Get the base.js file url from script element or the movie_player element.
+*/
+function get_base_js() {
+    var baseJs = $("[name='player/base']").attr('src');
+    if (baseJs == null || baseJs == undefined || baseJs === "" ) {
+        baseJs = $("#movie_player").attr("data-version");
+    }
+
+    return baseJs;
+}
+
+/*
 playerUrl: https://www.youtube.com/yts/jsbin/player-vflZ_L_3c/en_US/base.js
 */
 function decrypt_manifest_signature(manifestUrl) {
-    var playerUrl = "https://www.youtube.com" + $("#movie_player").attr("data-version");
+    var playerUrl = "https://www.youtube.com" + get_base_js();
     var encryptedCode = get_encrypted_code_from_manifest(manifestUrl);
     console.log("Get decrypted manifest signature");
 
