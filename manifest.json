@@ -17,13 +17,18 @@
     }],
 
     "background": {
-        "scripts": ["js/background.js"]
+        "scripts": [
+            "js/lib/jquery-3.2.1.min.js",
+            "js/background.js"
+        ]
     },
 
     "permissions": [
+        "tabs",
         "webNavigation",
         "activeTab",
         "https://ajax.googleapis.com/",
-        "https://*.googlevideo.com/"
+        "https://*.googlevideo.com/",
+        "https://www.youtube.com/"
     ]
 }

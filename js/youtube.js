@@ -109,14 +109,44 @@ function get_dash_manifest() {
     var deferred = Q.defer();
 
     for (var i = 0; i < dashMpds.length; i++) {
-        $.get(dashMpds[i], function(data) {
+        var manifestUrl = dashMpds[i];
+        $.get(manifestUrl, function(data) {
             deferred.resolve(data);
         }).fail(function(jqXHR, textStatus, errorThrown) {
-            deferred.reject(errorThrown);
+            decrypt_manifest_signature(manifestUrl);
+            if (i == dashMpds.length - 1) {
+                deferred.reject(errorThrown);
+            }
         });
     }
 
     return deferred.promise;
+}
+
+function get_encrypted_code_from_manifest(manifestUrl) {
+    var pattern = new RegExp(/\/s\/([a-fA-F0-9\.]+)/);
+    var mobj = pattern.exec(manifestUrl);
+
+    var encryptedCode = null;
+    if (mobj != null) {
+        encryptedCode = mobj[1];
+    }
+
+    return encryptedCode;
+}
+
+/*
+playerUrl: https://www.youtube.com/yts/jsbin/player-vflZ_L_3c/en_US/base.js
+*/
+function decrypt_manifest_signature(manifestUrl) {
+    var playerUrl = "https://www.youtube.com" + $("#movie_player").attr("data-version");
+    var encryptedCode = get_encrypted_code_from_manifest(manifestUrl);
+
+    // Handle in background script.
+    chrome.runtime.sendMessage({
+        playerUrl: playerUrl,
+        encryptedCode: encryptedCode
+    }, function() {});
 }
 
 function add_dash_mpd(videoInfo) {
@@ -345,7 +375,7 @@ function start() {
     var webpage = get_webpage();
     var thumbnailUrl = "";
     var audio_link;
-    
+
     get_video_info(webpage).then(function(videoInfo) {
         console.log("Obtained video info");
         add_dash_mpd(videoInfo);
@@ -398,5 +428,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
                 }
             });
         }
+    } else if(msg.decryptedCode) {
+        var decryptedCode = msg.decryptedCode;
+        console.log(decryptedCode);
     }
 });
