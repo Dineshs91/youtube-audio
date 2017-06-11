@@ -6,19 +6,6 @@ var enableObserver = false;
 var observer;
 var videoInfoUrl = "https://www.youtube.com/get_video_info/";
 
-function extract_swf_player(webpage) {
-    var pattern = new RegExp('/swfConfig.*?"(https?:\\/\\/.*?watch.*?-.*?\.swf)"/');
-    var mobj = pattern.exec(webpage);
-
-    var playerUrl = null;
-    if (mobj != null) {
-        var playerUrlPattern = '\\(.)';
-        playerUrl = str.replace(playerUrlPattern, '\1', mobj[1]);
-    }
-
-    return playerUrl;
-}
-
 /*
 Get ytplayer config from the webpage.
 */
