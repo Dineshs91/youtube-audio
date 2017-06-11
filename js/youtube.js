@@ -65,7 +65,7 @@ function create_video_element(audioSrc) {
 Remove the video elements inserted by us previously.
 */
 function remove_custom_video_elements() {
-    console.log("Removing custom video elements");
+    console.log("[youtube-audio] Removing custom video elements");
     $(".audiox").each(function() {
         $(this).trigger('pause');
         // $(this).find("source").attr("src", "");
@@ -79,7 +79,7 @@ function remove_custom_video_elements() {
 Remove youtube's video element. 
 */
 function remove_video_elements() {
-    console.log("[youtube-audio]  Removing youtube video elements");
+    console.log("[youtube-audio] Removing youtube video elements");
 
     // Copy the element before removing
     var videoPlayer = $("#movie_player");
@@ -110,9 +110,8 @@ function add_event_listeners() {
     // If our custom video element is removed by yt, we try to embed again.
     $('#player-api').leave("div", function() {
         if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
-            // console.log($(this)[0].className);
             if (! $(".html5-video-player.audiox").length) {
-                console.log("[youtube-audio]  Trying to embed again");
+                console.log("[youtube-audio] Trying to embed again");
                 init();
             }
         }
@@ -207,12 +206,17 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         //     url: url
         // };
 
-        console.log("[youtube-audio] history change");
+        console.log("[youtube-audio] history change: " + msg.url);
         var url = msg.url;
-        var historyVideoId = get_video_id(url);
+        var historyVideoId = null;
+        if (url != null || url != undefined || url != "") {
+            historyVideoId = getParameterByName('v', url);
+        }
+
         var currentVideoId = get_video_id();
 
-        if (currentVideoId === historyVideoId) {
+        if (currentVideoId === historyVideoId && !(currentVideoId == null || currentVideoId == undefined)) {
+            console.log("[youtube-audio] calling init function:" + currentVideoId + ":" + historyVideoId);
             init();    
         }
     }

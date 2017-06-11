@@ -22,7 +22,7 @@ Decrypt the signature, so that it can be used to get the manifest without gettin
 */
 function get_decrypted_manifest_url(manifestUrl, playerUrl, encryptedCode) {
     var deferred = Q.defer();
-    console.log("[youtube-audio]  Received message")
+    console.log("[youtube-audio] Received message")
 
     $.get(playerUrl, function(playerSrcCode) {
         var sigFunction = get_function(playerSrcCode);
