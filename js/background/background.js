@@ -1,3 +1,5 @@
+/////////////////////////////////////////// Decrypt signature ///////////////////////////////////////////
+
 /*
 Decrypt the signature, so that it can be used to get the manifest without hitting 403.
 */
