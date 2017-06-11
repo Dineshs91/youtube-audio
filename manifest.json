@@ -19,7 +19,7 @@
     "background": {
         "scripts": [
             "js/lib/jquery-3.2.1.min.js",
-            "js/background.js"
+            "js/background/background.js"
         ]
     },
 
