@@ -104,8 +104,7 @@ function autoplay_enabled() {
 
 function add_event_listeners() {
     // First unbind all the existing listeners
-    $("#player-api").unbindArrive();
-    $("#player-api").unbindLeave();
+    unbind_event_listeners();
 
     // If our custom video element is removed by yt, we try to embed again.
     $('#player-api').leave("div", function() {
@@ -138,9 +137,15 @@ function add_event_listeners() {
     // This is needed to remove any dynamic elements added by yt.
     $('#player-api').arrive("div", function() {
         if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+            $(this).find('video').trigger('pause');
             $(this).remove();
         }
     });
+}
+
+function unbind_event_listeners() {
+    $("#player-api").unbindArrive();
+    $("#player-api").unbindLeave();
 }
 
 function get_webpage() {
@@ -217,6 +222,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
         if (currentVideoId === historyVideoId && !(currentVideoId == null || currentVideoId == undefined)) {
             console.log("[youtube-audio] calling init function:" + currentVideoId + ":" + historyVideoId);
+            unbind_event_listeners();
             init();    
         }
     }
