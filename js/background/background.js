@@ -20,7 +20,7 @@ function form_decrypted_manifest_url(manifestUrl, decryptedCode) {
 /*
 Decrypt the signature, so that it can be used to get the manifest without getting 403.
 */
-function get_decrypted_manifest_url(manifestUrl, playerUrl, encryptedCode) {
+function get_decrypted_manifest_url(tabId, manifestUrl, playerUrl, encryptedCode) {
     var deferred = Q.defer();
     console.log("[youtube-audio] Received message")
 
@@ -28,7 +28,7 @@ function get_decrypted_manifest_url(manifestUrl, playerUrl, encryptedCode) {
         var sigFunction = get_function(playerSrcCode);
         var decryptSrcCode = find_decrypt_src_code(playerSrcCode, sigFunction);
 
-        chrome.tabs.executeScript(null, {
+        chrome.tabs.executeScript(tabId, {
             code: decryptSrcCode + sigFunction + "('" + encryptedCode + "')"
         }, function(decryptedCode) {
             var decryptedManifestUrl = form_decrypted_manifest_url(manifestUrl, decryptedCode);
@@ -236,7 +236,7 @@ function get_encrypted_code_from_manifest(manifestUrl) {
 /*
 Convert all manifest url's containing encrypted codes to url's with decrypted codes.
 */
-function convert_to_decrypted_manifest_urls(playerUrl) {
+function convert_to_decrypted_manifest_urls(tabId, playerUrl) {
     var deferred = Q.defer();
     var decryptedManifestPromises = [];
 
@@ -244,7 +244,7 @@ function convert_to_decrypted_manifest_urls(playerUrl) {
         var manifestUrl = dashMpds[i];
         var encryptedCode = get_encrypted_code_from_manifest(manifestUrl);
 
-        decryptedManifestPromises.push(get_decrypted_manifest_url(manifestUrl, playerUrl, encryptedCode));
+        decryptedManifestPromises.push(get_decrypted_manifest_url(tabId, manifestUrl, playerUrl, encryptedCode));
     }
     Q.all(decryptedManifestPromises).then(function(decryptedManifestUrls) {
         deferred.resolve(decryptedManifestUrls)
@@ -337,7 +337,7 @@ function start(tabId, msg) {
 
     get_video_info(videoId, webpage).then(function(videoInfo) {
         add_dash_mpd(videoInfo);
-        return convert_to_decrypted_manifest_urls(playerUrl);
+        return convert_to_decrypted_manifest_urls(tabId, playerUrl);
     }).then(function(decryptedDashManifests) {
         return get_dash_manifest(decryptedDashManifests)
     }).then(function(dashManifest) {
