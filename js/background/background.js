@@ -342,7 +342,13 @@ function start(tabId, msg) {
         return get_dash_manifest(decryptedDashManifests)
     }).then(function(dashManifest) {
         var jsonDoc = xml_parse(dashManifest);
-        var audioLink = get_audio_links(jsonDoc)[0]['link'];
+
+        // Sort audioLinks by audioSamplingRate. Select the best audio.
+        var audioLinks = get_audio_links(jsonDoc);
+        audioLinks = audioLinks.sort(function(a, b) {
+            return b.audioSamplingRate - a.audioSamplingRate;
+        });
+        var audioLink = audioLinks[0]['link'];
         var thumbnailUrl = get_thumbnail(webpage);
 
         var msg = {
