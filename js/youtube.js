@@ -35,9 +35,18 @@ function play_next_audio() {
 function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     remove_custom_video_elements();
 
+    console.log("Number of video elements in this page." + $('video').length);
+
+    $(document).find('video').each(function() {
+        console.log("Trying to remove all video elements");
+        console.log($(this));
+        $(this).pause();
+        $(this).remove();
+    });
+
     console.log("[youtube-audio] Embedding custom video element");
     var videoElement = create_video_element(audioLink);
-    $("#player-api").append("<div class='html5-video-player audiox'></div>");
+    $("#player-api").append("<div class='html5-video-player audio-div'></div>");
     $(".html5-video-player").prepend(videoElement);
 
     var thumbnail = $("<img src=" + thumbnailUrl + " style='width: 100%; height: 90%;'></img>");
@@ -67,7 +76,8 @@ Remove the video elements inserted by us previously.
 function remove_custom_video_elements() {
     console.log("[youtube-audio] Removing custom video elements");
     $(".audiox").each(function() {
-        $(this).pause();
+        console.log($(this));
+        $(this)[0].pause();
         $(this).remove();
     });
 
@@ -110,8 +120,8 @@ function add_event_listeners() {
 
     // If our custom video element is removed by yt, we try to embed again.
     $('#player-api').leave("div", function() {
-        if (enableObserver && $(this)[0].className == "html5-video-player audiox") {
-            if (! $(".html5-video-player.audiox").length) {
+        if (enableObserver && $(this)[0].className == "html5-video-player audio-div") {
+            if (! $(".html5-video-player.audio-div").length) {
                 console.log("[youtube-audio] Trying to embed again");
                 init();
             }
@@ -128,8 +138,9 @@ function add_event_listeners() {
     });
 
     // pause the video and remove it first. (except for our video element.)
-    $('#player-api').arrive("video", function() {
-        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+    $(document).arrive("video", function() {
+        if(enableObserver && $(this)[0].className != "audiox" ) {
+            console.log($(this));
             $(this)[0].pause();
             $(this).remove();
         }
@@ -138,7 +149,7 @@ function add_event_listeners() {
     // Remove all the child nodes of player-api element except for our video element.
     // This is needed to remove any dynamic elements added by yt.
     $('#player-api').arrive("div", function() {
-        if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
+        if(enableObserver && $(this)[0].className != "html5-video-player audio-div" ) {
             var videoElement = $(this).find('video')[0];
             if(videoElement != undefined || videoElement != null) {
                 videoElement.pause();
@@ -149,8 +160,8 @@ function add_event_listeners() {
 }
 
 function unbind_event_listeners() {
-    $("#player-api").unbindArrive();
-    $("#player-api").unbindLeave();
+    $(document).unbindArrive();
+    $(document).unbindLeave();
 }
 
 function get_webpage() {
