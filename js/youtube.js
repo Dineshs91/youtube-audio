@@ -67,8 +67,7 @@ Remove the video elements inserted by us previously.
 function remove_custom_video_elements() {
     console.log("[youtube-audio] Removing custom video elements");
     $(".audiox").each(function() {
-        $(this).trigger('pause');
-        // $(this).find("source").attr("src", "");
+        $(this).pause();
         $(this).remove();
     });
 
@@ -85,7 +84,10 @@ function remove_video_elements() {
     var videoPlayer = $("#movie_player");
 
     // pause the video before removing it.
-    videoPlayer.find("video").trigger("pause");
+    var videoElement = videoPlayer.find("video")[0];
+    if(videoElement != undefined || videoElement != null) {
+        videoElement.pause();
+    }
 
     // remove the element.
     videoPlayer.remove();
@@ -128,7 +130,7 @@ function add_event_listeners() {
     // pause the video and remove it first. (except for our video element.)
     $('#player-api').arrive("video", function() {
         if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
-            $(this).trigger('pause');
+            $(this)[0].pause();
             $(this).remove();
         }
     });
@@ -137,7 +139,10 @@ function add_event_listeners() {
     // This is needed to remove any dynamic elements added by yt.
     $('#player-api').arrive("div", function() {
         if(enableObserver && $(this)[0].className != "html5-video-player audiox" ) {
-            $(this).find('video').trigger('pause');
+            var videoElement = $(this).find('video')[0];
+            if(videoElement != undefined || videoElement != null) {
+                videoElement.pause();
+            }
             $(this).remove();
         }
     });
