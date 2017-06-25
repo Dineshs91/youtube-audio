@@ -37,14 +37,13 @@ function embed_audio_to_webpage(audioLink, thumbnailUrl) {
 
     console.log("Number of video elements in this page." + $('video').length);
 
-    $(document).find('video').each(function() {
-        console.log("Trying to remove all video elements");
-        console.log($(this));
-        $(this).pause();
-        $(this).remove();
-    });
+    if($('.audiox').length >= 1) {
+        console.log("Custom video element already added. So skipping.");
+        return
+    }
 
     console.log("[youtube-audio] Embedding custom video element");
+
     var videoElement = create_video_element(audioLink);
     $("#player-api").append("<div class='html5-video-player audio-div'></div>");
     $(".html5-video-player").prepend(videoElement);
@@ -115,19 +114,6 @@ function autoplay_enabled() {
 }
 
 function add_event_listeners() {
-    // First unbind all the existing listeners
-    unbind_event_listeners();
-
-    // If our custom video element is removed by yt, we try to embed again.
-    $('#player-api').leave("div", function() {
-        if (enableObserver && $(this)[0].className == "html5-video-player audio-div") {
-            if (! $(".html5-video-player.audio-div").length) {
-                console.log("[youtube-audio] Trying to embed again");
-                init();
-            }
-        }
-    });
-
     // Autoplay
     $(".audiox").on("ended", function() {
         console.log("[youtube-audio] Autoplay enabled: " + autoplayEnabled);
@@ -136,36 +122,17 @@ function add_event_listeners() {
         }
 
     });
-
-    // pause the video and remove it first. (except for our video element.)
-    $(document).arrive("video", function() {
-        if(enableObserver && $(this)[0].className != "audiox" ) {
-            console.log($(this));
-            $(this)[0].pause();
-            $(this).remove();
-        }
-    });
-
-    // Remove all the child nodes of player-api element except for our video element.
-    // This is needed to remove any dynamic elements added by yt.
-    $('#player-api').arrive("div", function() {
-        if(enableObserver && $(this)[0].className != "html5-video-player audio-div" ) {
-            var videoElement = $(this).find('video')[0];
-            if(videoElement != undefined || videoElement != null) {
-                videoElement.pause();
-            }
-            $(this).remove();
-        }
-    });
 }
 
-function unbind_event_listeners() {
-    $(document).unbindArrive();
-    $(document).unbindLeave();
-}
+function get_webpage(videoId) {
+    var deferred = Q.defer();
+    $.get("https://www.youtube.com/watch?v=" + videoId, function(data) {
+        deferred.resolve(data);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        deferred.reject(errorThrown);
+    });
 
-function get_webpage() {
-    return document.body.innerHTML;
+    return deferred.promise;
 }
 
 function send_message(msg) {
@@ -193,17 +160,33 @@ function init() {
     var videoId = get_video_id();
     if (videoId != null || videoId != undefined || videoId === "") {
         console.log("[youtube-audio] found video:" + videoId);
-        var webpage = get_webpage();
-        var baseJs = get_base_js();
+        get_webpage(videoId).then(function(webpage) {
+            var baseJs = get_base_js();
 
-        var msg = {
-            type: constant.videoFound,
-            videoId: videoId,
-            webpage: webpage,
-            baseJs: baseJs
-        }
+            var msg = {
+                type: constant.videoFound,
+                videoId: videoId,
+                webpage: webpage,
+                baseJs: baseJs
+            }
 
-        send_message(msg);
+            var messageSent = false;
+
+            $("#movie_player").find('video').on('playing', function() {
+                if(! messageSent) {
+                    send_message(msg);
+                    messageSent = true;
+                }
+            });
+
+            document.arrive("#movie_player", function() {
+                if(! messageSent) {
+                    send_message(msg);
+                    messageSent = true;
+                }
+                $(document).unbindArrive("#movie_player");
+            });
+        });   
     }
 }
 
@@ -238,7 +221,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
         if (currentVideoId === historyVideoId && !(currentVideoId == null || currentVideoId == undefined)) {
             console.log("[youtube-audio] calling init function:" + currentVideoId + ":" + historyVideoId);
-            unbind_event_listeners();
+            //unbind_event_listeners();
             init();    
         }
     }
