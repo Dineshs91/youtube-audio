@@ -172,6 +172,14 @@ function init() {
 
             var messageSent = false;
 
+            // If video is already playing, then the event listener doesn't get triggered.
+            if(! $("#movie_player").find('video')[0].paused) {
+                if(! messageSent) {
+                    send_message(msg);
+                    messageSent = true;
+                }
+            }
+
             $("#movie_player").find('video').on('playing', function() {
                 if(! messageSent) {
                     send_message(msg);
@@ -221,7 +229,6 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
         if (currentVideoId === historyVideoId && !(currentVideoId == null || currentVideoId == undefined)) {
             console.log("[youtube-audio] calling init function:" + currentVideoId + ":" + historyVideoId);
-            //unbind_event_listeners();
             init();    
         }
     }
