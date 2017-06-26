@@ -11,6 +11,7 @@
             "js/lib/q.js",
             "js/lib/arrive.min.js",
             "js/utils.js",
+            "js/constants.js",
             "js/youtube.js"
         ],
         "run_at": "document_end"
@@ -19,7 +20,10 @@
     "background": {
         "scripts": [
             "js/lib/jquery-3.2.1.min.js",
-            "js/background.js"
+            "js/lib/q.js",
+            "js/utils.js",
+            "js/constants.js",
+            "js/background/background.js"
         ]
     },
 
