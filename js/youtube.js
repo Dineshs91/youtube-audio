@@ -151,6 +151,10 @@ function handle_audio_found(msg) {
         autoplay_enabled();
     } else {
         enableObserver = false;
+
+        // Since we are not able to play the audio, play
+        // the actual video, which we paused earlier.
+        $("#movie_player").find('video')[0].play();
     }
 
     add_event_listeners();
@@ -173,8 +177,10 @@ function init() {
             var messageSent = false;
 
             // If video is already playing, then the event listener doesn't get triggered.
+            // So find out if it playing and send_message.
             if(! $("#movie_player").find('video')[0].paused) {
                 if(! messageSent) {
+                    $("#movie_player").find('video')[0].pause();
                     send_message(msg);
                     messageSent = true;
                 }
@@ -182,6 +188,7 @@ function init() {
 
             $("#movie_player").find('video').on('playing', function() {
                 if(! messageSent) {
+                    $("#movie_player").find('video')[0].pause();
                     send_message(msg);
                     messageSent = true;
                 }
@@ -189,6 +196,7 @@ function init() {
 
             document.arrive("#movie_player", function() {
                 if(! messageSent) {
+                    $("#movie_player").find('video')[0].pause();
                     send_message(msg);
                     messageSent = true;
                 }
