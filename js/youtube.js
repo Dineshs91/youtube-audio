@@ -220,6 +220,14 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
         console.log("[youtube-audio] Found audio");
         handle_audio_found(msg);
+    } else if(msg.type == constant.error) {
+        // Play the actual video, since there was an error
+        // getting the manifest file.
+        enableObserver = false;
+
+        // Since we are not able to play the audio, play
+        // the actual video, which we paused earlier.
+        $("#movie_player").find('video')[0].play();
     } else if(msg.type == constant.historyChange) {
         // msg = {
         //     type: historyChange,

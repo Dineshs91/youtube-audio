@@ -359,6 +359,11 @@ function start(tabId, msg) {
         send_message(tabId, msg);
     }).catch(function(error) {
         console.log("Some error occurred: " + error);
+        var msg = {
+            type: constant.error,
+            description: "Error while downloading the manifest"
+        }
+        send_message(tabId, msg);
     });
 }
 
