@@ -37,4 +37,4 @@ restored. It honours the autoplay option as well (Which is one of my favourite f
 
 ## Credits
 This project would not have been possible without the awesome [youtube-dl](https://github.com/rg3/youtube-dl) project.
-The code for extracting the audio is a direct port from this project.
+The code for extracting the audio is a direct port from that project.
