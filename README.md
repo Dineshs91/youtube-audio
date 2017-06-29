@@ -1,6 +1,10 @@
 # youtube-audio
 Listen to audio on youtube.
 
+
+![youtube-audio-screenshot](https://github.com/Dineshs91/youtube-audio/blob/master/youtube-audio-screenshot.png)
+
+
 ## Features
 - Plays the best audio available.
 - No ads.
