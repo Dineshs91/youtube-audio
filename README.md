@@ -10,6 +10,10 @@ Listen to audio on youtube. This is a chrome extension which converts youtube to
 - No ads.
 - Youtube's autoplay works but with audio.
 
+## Options
+Currently there are no options except for enable or disable from chrome://extensions. I would be open to see a PR which adds a
+popup and some options there. Some options I could think of are option to choose the audio quality, enable/disable option.
+
 ## Development
 Fork this project. Navigate to chrome://extensions and enable developer mode in chrome. Drag and drop the directory you just 
 cloned. That's it. Hack away.
