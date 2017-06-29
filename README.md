@@ -14,6 +14,17 @@ Listen to audio on youtube.
 Fork this project. Navigate to chrome://extensions and enable developer mode in chrome. Drag and drop the directory you just 
 cloned. That's it. Hack away.
 
+## Approach
+
+_Content script_:
+Downloads the webpage and sends it to background for further processing. Once background page sends back a message with the
+audio link, youtube's video element is removed from the page and the custom video element (Which plays audio) is embedded
+along with the thumbnail of the corresponding video.
+
+_Background page_:
+Takes care of downloading the manifest by decrypting signatures first. It chooses the best audio available and sends a message
+to content script.
+
 ## Caveats
 This extension tries to play the audio. It it's not able to do so, then the actual video is played, hence no interference. 
 
