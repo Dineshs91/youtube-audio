@@ -30,7 +30,9 @@ Takes care of downloading the manifest by decrypting signatures first. It choose
 to content script.
 
 ## Caveats
-This extension tries to play the audio. It it's not able to do so, then the actual video is played, hence no interference. 
+This extension tries to play the audio. It it's not able to do so, then the actual video is played, hence no interference.
+The audio is loaded completely, before it is played. So if it is a long one, then it might take some time, before the audio
+starts.
 
 ## Motivation
 Most of the times while working I listen to songs on youtube. But the bandwidth gets used for video.
