@@ -1,6 +1,15 @@
 # youtube-audio
 Listen to audio on youtube.
 
+## Features
+- Plays the best audio available.
+- No ads.
+- Youtube's autoplay works but with audio.
+
+## Development
+Fork this project. Navigate to chrome://extensions and enable developer mode in chrome. Drag and drop the directory you just 
+cloned. That's it. Hack away.
+
 ## Motivation
 Most of the times while working I listen to songs on youtube. But the bandwidth gets used for video.
 I felt there was lot of bandwidth being wasted. Hence I decided to write this chrome extension.
