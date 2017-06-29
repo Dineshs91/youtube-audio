@@ -1,5 +1,5 @@
 # youtube-audio
-Listen to audio on youtube.
+Listen to audio on youtube. This is a chrome extension which converts youtube to play just the audio.
 
 
 ![youtube-audio-screenshot](https://github.com/Dineshs91/youtube-audio/blob/master/youtube-audio-screenshot.png)
