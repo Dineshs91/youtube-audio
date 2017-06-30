@@ -35,8 +35,6 @@ function play_next_audio() {
 function embed_audio_to_webpage(audioLink, thumbnailUrl) {
     remove_custom_video_elements();
 
-    console.log("Number of video elements in this page." + $('video').length);
-
     if($('.audiox').length >= 1) {
         console.log("Custom video element already added. So skipping.");
         return
