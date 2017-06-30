@@ -60,7 +60,7 @@ Create and return a video element with the provided audio src.
 </video>
 */
 function create_video_element(audioSrc) {
-    var videoElement = $("<video controls autoplay controlsList='nodownload' name='media' class='audiox' style='width: 100%; height: 100%;'></video>");
+    var videoElement = $("<video controls preload='none' autoplay controlsList='nodownload' name='media' class='audiox' style='width: 100%; height: 100%;'></video>");
     var sourceElement = $("<source src='" + audioSrc + "' type='audio/mp4'></source>")
 
     videoElement.append(sourceElement[0]);
@@ -90,9 +90,14 @@ function remove_video_elements() {
     // Copy the element before removing
     var videoPlayer = $("#movie_player");
 
+    videoPlayer.removeClass();
+
     // pause the video before removing it.
     var videoElement = videoPlayer.find("video")[0];
     if(videoElement != undefined || videoElement != null) {
+        $(videoElement).removeClass();
+        $(videoElement).src = "";
+        videoElement.load();
         videoElement.pause();
     }
 
