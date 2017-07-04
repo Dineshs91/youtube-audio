@@ -209,8 +209,6 @@ function init() {
     }
 }
 
-//init();
-
 /////////////////////////////////////////// Listeners ///////////////////////////////////////////
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -248,7 +246,17 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
         if (currentVideoId === historyVideoId && !(currentVideoId == null || currentVideoId == undefined)) {
             console.log("[youtube-audio] calling init function:" + currentVideoId + ":" + historyVideoId);
-            init();    
+            chrome.storage.local.get("youtube_audio_enabled", function(data) {
+                if(data.youtube_audio_enabled == true) {
+                    init();
+                }
+            });
         }
+    }
+});
+
+chrome.storage.onChanged.addListener(function(changes) {
+    if(changes.youtube_audio_enabled.newValue == false) {
+        location.reload();
     }
 });
